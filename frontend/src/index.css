@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 13%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 13%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 13%;
+
+    /* Fiverr Green */
+    --primary: 152 74% 43%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Darker Green for accents */
+    --secondary: 151 70% 25%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 20% 98%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 210 20% 96%;
+    --accent-foreground: 0 0% 13%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 60 9.1% 97.8%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 152 74% 43%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 215 25% 10%;
+    --foreground: 60 9.1% 97.8%;
+
+    --card: 215 25% 10%;
+    --card-foreground: 60 9.1% 97.8%;
+
+    --popover: 215 25% 10%;
+    --popover-foreground: 60 9.1% 97.8%;
+
+    --primary: 175 77% 26%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 35 92% 44%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 215 19% 15%;
+    --muted-foreground: 215 19% 65%;
+
+    --accent: 215 19% 35%;
+    --accent-foreground: 60 9.1% 97.8%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 60 9.1% 97.8%;
+
+    --border: 215 19% 20%;
+    --input: 215 19% 20%;
+    --ring: 175 77% 26%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+/* Custom Spacing & Typography */
+h1, h2, h3, h4, h5, h6 {
+  @apply font-bold text-slate-900;
+}
+
+.glass {
+  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-light;
+}

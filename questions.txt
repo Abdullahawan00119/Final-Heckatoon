@@ -1,0 +1,1 @@
+﻿- Will you provide the Cloudinary credentials and MongoDB URI, or should I use placeholders for now?
