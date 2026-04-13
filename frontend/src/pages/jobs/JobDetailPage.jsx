@@ -46,6 +46,8 @@ const JobDetailPage = () => {
     estimatedDuration: '',
     coverLetter: ''
   });
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -57,10 +59,17 @@ const JobDetailPage = () => {
           const applied = res.data.data.applicants.some(a => a.provider === user._id || a.provider._id === user._id);
           setHasApplied(applied);
         }
+
+        // Fetch reviews for the job poster (customer)
+        setLoadingReviews(true);
+        const posterId = res.data.data.postedBy._id || res.data.data.postedBy;
+        const revRes = await api.get(`/reviews/user/${posterId}`);
+        setReviews(revRes.data.data);
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
+        setLoadingReviews(false);
       }
     };
     fetchJob();
@@ -151,13 +160,80 @@ const JobDetailPage = () => {
             </CardContent>
           </Card>
 
-          {job.images?.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {job.images.map((img, i) => (
-                <img key={i} src={img} alt="" className="rounded-xl border shadow-sm w-full h-auto object-cover max-h-[400px]" />
-              ))}
+          {/* Media Gallery */}
+          <div className="space-y-4">
+            <div className="aspect-video relative rounded-[2rem] overflow-hidden bg-slate-900 shadow-2xl ring-1 ring-slate-200/50">
+              {job.videoUrl ? (
+                <video 
+                  src={job.videoUrl} 
+                  controls 
+                  className="w-full h-full object-contain"
+                  poster={job.images?.[0]}
+                />
+              ) : job.images?.length > 0 ? (
+                <img 
+                  src={job.images[0]} 
+                  alt={job.title} 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-2">
+                  <AlertCircle className="h-10 w-10 opacity-20" />
+                  <p className="text-sm font-medium">No media provided for this job</p>
+                </div>
+              )}
             </div>
-          )}
+            
+            {job.images?.length > 1 && (
+              <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+                {job.images.map((img, i) => (
+                  <div key={i} className="h-20 w-32 shrink-0 rounded-2xl overflow-hidden border-2 border-transparent hover:border-primary transition-all cursor-pointer shadow-sm">
+                    <img src={img} className="w-full h-full object-cover" alt="" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <Card className="border-0 shadow-medium rounded-[1.5rem] overflow-hidden">
+            <CardHeader className="bg-slate-50/50 border-b">
+              <CardTitle className="text-lg">Poster Reviews</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {loadingReviews ? (
+                <div className="flex justify-center py-10">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : reviews.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground">
+                  <p className="text-sm">No reviews yet for this user.</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {reviews.map((rev) => (
+                    <div key={rev._id} className="flex gap-4">
+                      <Avatar className="h-10 w-10 shrink-0">
+                        <AvatarImage src={rev.reviewer?.avatar} />
+                        <AvatarFallback>{rev.reviewer?.firstName?.[0]}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-bold text-sm">{rev.reviewer?.firstName} {rev.reviewer?.lastName}</h4>
+                          <div className="flex items-center gap-0.5">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} className={`h-3 w-3 ${i < rev.overallRating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`} />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-sm text-slate-600 italic">"{rev.comment}"</p>
+                        <p className="text-[10px] text-muted-foreground text-right">{new Date(rev.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Sidebar */}

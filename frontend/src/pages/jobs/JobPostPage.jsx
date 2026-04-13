@@ -26,6 +26,9 @@ const JobPostPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [images, setImages] = useState([]);
+  const [video, setVideo] = useState(null);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
 
   const {
     register,
@@ -43,9 +46,53 @@ const JobPostPage = () => {
     setLoading(true);
     setError(null);
     try {
+      let uploadedImageUrls = [];
+      
+      // Upload images if any selected
+      if (images.length > 0) {
+        setUploadingMedia(true);
+        try {
+          const uploadData = new FormData();
+          Array.from(images).forEach(file => uploadData.append('images', file));
+          const imgRes = await api.post('/upload/images', uploadData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          uploadedImageUrls = imgRes.data.data || [];
+        } catch (uploadErr) {
+          console.error('Image upload failed:', uploadErr);
+          setError('Failed to upload images. Please try again.');
+          setLoading(false);
+          setUploadingMedia(false);
+          return;
+        }
+      }
+
+      // Upload video if selected
+      let uploadedVideoUrl = '';
+      if (video) {
+        setUploadingMedia(true);
+        try {
+          const uploadData = new FormData();
+          uploadData.append('video', video);
+          const vidRes = await api.post('/upload/video', uploadData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          uploadedVideoUrl = vidRes.data.data || '';
+        } catch (uploadErr) {
+          console.error('Video upload failed:', uploadErr);
+          setError('Failed to upload video. Please try again.');
+          setLoading(false);
+          setUploadingMedia(false);
+          return;
+        }
+      }
+      setUploadingMedia(false);
+
       const payload = {
         ...data,
-        location: { city: data.city, area: data.area }
+        location: { city: data.city, area: data.area },
+        images: uploadedImageUrls,
+        videoUrl: uploadedVideoUrl
       };
       await api.post('/jobs', payload);
       navigate('/dashboard');
@@ -147,10 +194,36 @@ const JobPostPage = () => {
               </div>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+              <div className="space-y-2">
+                <Label htmlFor="images">Job Images (Optional)</Label>
+                <Input 
+                  id="images" 
+                  type="file" 
+                  multiple 
+                  accept="image/*"
+                  onChange={(e) => setImages(e.target.files)}
+                  className="cursor-pointer"
+                />
+                <p className="text-xs text-muted-foreground">Attach photos of the work or site.</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="video">Job Video (Optional)</Label>
+                <Input 
+                  id="video" 
+                  type="file" 
+                  accept="video/*"
+                  onChange={(e) => setVideo(e.target.files[0])}
+                  className="cursor-pointer"
+                />
+                <p className="text-xs text-muted-foreground">Attach a short video explaining the job.</p>
+              </div>
+            </div>
+
             <div className="pt-4 flex flex-col sm:flex-row gap-4">
-              <Button type="submit" className="flex-1 shadow-medium" size="lg" disabled={loading}>
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Post Job
+              <Button type="submit" className="flex-1 shadow-medium" size="lg" disabled={loading || uploadingMedia}>
+                {loading || uploadingMedia ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {uploadingMedia ? 'Uploading Media...' : 'Post Job'}
               </Button>
               <Button type="button" variant="outline" size="lg" onClick={() => navigate(-1)}>
                 Cancel

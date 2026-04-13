@@ -60,17 +60,47 @@ const ProfilePage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Client-side validation
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      alert('First and last name are required.');
+      return;
+    }
+    if (!formData.phone.trim()) {
+      alert('Phone number is required.');
+      return;
+    }
+    if (!formData.location.city.trim()) {
+      alert('City is required.');
+      return;
+    }
+
     setLoading(true);
     try {
       const dataToSubmit = {
-        ...formData,
-        skills: formData.skills.split(',').map(s => s.trim()).filter(s => s !== '')
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        bio: formData.bio.trim(),
+        phone: formData.phone.trim(),
+        location: {
+          city: formData.location.city.trim(),
+          area: formData.location.area.trim()
+        },
+        skills: formData.skills
+          ? formData.skills.split(',').map(s => s.trim()).filter(s => s !== '')
+          : [],
+        hourlyRate: formData.hourlyRate ? Number(formData.hourlyRate) : undefined,
+        yearsOfExperience: formData.yearsOfExperience ? Number(formData.yearsOfExperience) : undefined
       };
       const res = await api.put('/users/profile', dataToSubmit);
       setUser(res.data.data);
       alert('Profile updated successfully!');
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update profile');
+      const msg = err.response?.data?.message || 'Failed to update profile';
+      const details = err.response?.data?.errors
+        ? '\n' + err.response.data.errors.map(e => Object.values(e)[0]).join('\n')
+        : '';
+      alert('Error: ' + msg + details);
     } finally {
       setLoading(false);
     }
@@ -79,20 +109,30 @@ const ProfilePage = () => {
   const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image too large. Please choose an image under 5MB.');
+      return;
+    }
+
     setUploadingAvatar(true);
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-      const res = await api.post('/upload/image', formData, {
+      const uploadData = new FormData();
+      uploadData.append('image', file);
+      const res = await api.post('/upload/image', uploadData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       const url = res.data.data;
-      
-      const updateRes = await api.put('/users/profile', { ...formData, avatar: url, skills: user.skills });
+      if (!url) throw new Error('No URL returned from upload');
+
+      const updateRes = await api.put('/users/profile', { avatar: url });
       setUser(updateRes.data.data);
-      alert('Avatar updated successfully!');
+      alert('Profile picture updated successfully!');
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to upload avatar (Check Cloudinary config)');
+      console.error('Avatar upload error:', err);
+      const msg = err.response?.data?.message || err.message || 'Failed to upload profile picture.';
+      alert('Avatar Error: ' + msg);
     } finally {
       setUploadingAvatar(false);
     }
